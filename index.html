@@ -261,39 +261,59 @@
             .plan-card .price { font-size: 11px; margin-bottom: 4px; }
             .plan-card .tag { font-size: 9px; padding: 1px 6px; }
 
-            /* Table: switch to border-separate so sticky works */
-            .compare-table {
+            /* === Key fix: convert table to flex on mobile === */
+            /* This makes position:sticky work reliably on iOS Safari */
+            .compare-table { display: block; border: none; }
+            .compare-table tbody { display: block; }
+
+            /* Regular rows → flex */
+            .compare-table tr {
+                display: flex;
                 min-width: calc(var(--feat-col) + var(--plan-col) * 4);
-                table-layout: fixed;
-                border-collapse: separate;
-                border-spacing: 0;
-            }
-            .compare-table td {
                 border-bottom: 1px solid #f0f0f0;
             }
-            .compare-table td:first-child {
-                width: var(--feat-col); min-width: var(--feat-col); max-width: var(--feat-col);
-                font-size: 11px; position: sticky; left: 0; background: #fff; z-index: 2;
-                word-wrap: break-word; overflow-wrap: break-word;
-                border-right: 1px solid #e8e8e8;
+            .compare-table td {
+                display: block; flex-shrink: 0; box-sizing: border-box;
+                padding: 9px 6px; font-size: 11px; text-align: center;
+                border-bottom: none;
             }
+
+            /* First column: STICKY */
+            .compare-table td:first-child {
+                width: var(--feat-col); min-width: var(--feat-col);
+                position: sticky; left: 0; z-index: 2;
+                background: #fff;
+                text-align: left;
+                border-right: 1px solid #e8e8e8;
+                word-wrap: break-word; overflow-wrap: break-word;
+            }
+
+            /* Data columns: exact width for 2 visible */
             .compare-table td:not(:first-child) {
                 width: var(--plan-col); min-width: var(--plan-col);
             }
-            .compare-table td, .compare-table th { padding: 9px 6px; font-size: 11px; }
+
+            /* Colspan cells (like Sora discontinued row) */
+            .compare-table td[colspan] { flex: 1; }
+
+            /* Category rows */
+            .category-row {
+                border-bottom: 2px solid #e8e8e8 !important;
+            }
+            .category-row td {
+                background: #f8f9fb !important;
+            }
             .category-row td:first-child {
                 position: sticky; left: 0; z-index: 2;
                 background: #f8f9fb !important;
-                border-right: 1px solid #e8e8e8;
             }
-            .compare-table tr:not(.category-row) td:first-child { background: #fff; }
 
             /* Perplexity: 3 plan columns */
             .perplexity-section .plan-header[style] {
                 grid-template-columns: var(--feat-col) repeat(3, var(--plan-col)) !important;
                 min-width: calc(var(--feat-col) + var(--plan-col) * 3) !important;
             }
-            .perplexity-section .compare-table {
+            .perplexity-section .compare-table tr {
                 min-width: calc(var(--feat-col) + var(--plan-col) * 3);
             }
 
