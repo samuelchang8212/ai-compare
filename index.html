@@ -210,6 +210,10 @@
         .insight-box .highlight { color: #d97706; font-weight: 600; }
 
         @media (max-width: 768px) {
+            :root {
+                --feat-col: 110px;
+                --plan-col: calc((100vw - 110px - 16px) / 2);
+            }
             body { padding: 16px 8px 80px; }
             h1 { font-size: 22px; }
             .subtitle { font-size: 12px; margin-bottom: 16px; }
@@ -238,37 +242,71 @@
             /* Legend */
             .legend { gap: 10px; font-size: 11px; margin-bottom: 16px; }
 
-            /* Table wrapper: horizontal scroll */
-            .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -8px; padding: 0 8px; }
+            /* Table scroll container */
+            .table-scroll {
+                overflow-x: auto; -webkit-overflow-scrolling: touch;
+                margin: 0 -8px; padding: 0 8px;
+            }
 
-            /* Plan header */
-            .plan-header-4 { grid-template-columns: 110px repeat(4, 100px); min-width: 510px; }
-            .plan-header[style] { min-width: 410px !important; }
+            /* Plan header: exact 2 columns visible */
+            .plan-header-4 {
+                grid-template-columns: var(--feat-col) repeat(4, var(--plan-col));
+                min-width: calc(var(--feat-col) + var(--plan-col) * 4);
+            }
+            .plan-header .corner {
+                position: sticky; left: 0; z-index: 3; background: #f5f7fa;
+            }
             .plan-card { padding: 12px 6px; }
             .plan-card h2 { font-size: 13px; margin-bottom: 2px; }
             .plan-card .price { font-size: 11px; margin-bottom: 4px; }
             .plan-card .tag { font-size: 9px; padding: 1px 6px; }
 
-            /* Table */
-            .compare-table { min-width: 510px; }
-            .perplexity-section .compare-table { min-width: 410px; }
-            .compare-table td:first-child { width: 110px; font-size: 11px; min-width: 110px; position: sticky; left: 0; background: #fff; z-index: 2; }
+            /* Table: exact column widths to match header */
+            .compare-table {
+                min-width: calc(var(--feat-col) + var(--plan-col) * 4);
+                table-layout: fixed;
+            }
+            .compare-table td:first-child {
+                width: var(--feat-col); min-width: var(--feat-col); max-width: var(--feat-col);
+                font-size: 11px; position: sticky; left: 0; background: #fff; z-index: 2;
+                word-wrap: break-word; overflow-wrap: break-word;
+            }
+            .compare-table td:not(:first-child) {
+                width: var(--plan-col); min-width: var(--plan-col);
+            }
             .compare-table td, .compare-table th { padding: 9px 6px; font-size: 11px; }
             .category-row td { position: sticky; left: 0; z-index: 2; }
+            .category-row td:first-child { background: #f8f9fb !important; }
+            .compare-table tr:not(.category-row):hover td:first-child { background: #f9fffe; }
+
+            /* Perplexity: 3 plan columns */
+            .perplexity-section .plan-header[style] {
+                grid-template-columns: var(--feat-col) repeat(3, var(--plan-col)) !important;
+                min-width: calc(var(--feat-col) + var(--plan-col) * 3) !important;
+            }
+            .perplexity-section .compare-table {
+                min-width: calc(var(--feat-col) + var(--plan-col) * 3);
+            }
+
+            /* Scroll indicator pills */
+            .scroll-pills {
+                display: flex; justify-content: center; gap: 6px;
+                padding: 10px 0 4px; font-size: 11px;
+            }
+            .scroll-pill {
+                padding: 3px 10px; border-radius: 12px;
+                background: #eee; color: #999; font-weight: 600;
+                transition: all 0.2s; white-space: nowrap;
+            }
+            .scroll-pill.visible { background: #333; color: #fff; }
 
             /* Tooltip: tap to show */
             .has-tip .tip {
                 min-width: 160px; max-width: 260px; font-size: 11px;
                 padding: 8px 12px; left: auto; right: 0; transform: none;
             }
-            /* Prevent tip from going off-screen left */
             .compare-table td:first-child .has-tip .tip,
             .compare-table td:nth-child(2) .has-tip .tip { left: 0; right: auto; }
-            /* Sticky column: category row background */
-            .category-row td:first-child { background: #f8f9fb !important; }
-            .compare-table tr:not(.category-row):hover td:first-child { background: #f9fffe; }
-            /* Perplexity 3-column layout on mobile */
-            .perplexity-section .plan-header[style] { grid-template-columns: 110px repeat(3, 100px) !important; min-width: 410px !important; }
 
             /* Badges */
             .badge-new, .badge-discontinued, .badge-ad { font-size: 9px; padding: 1px 4px; margin-left: 3px; }
@@ -287,6 +325,8 @@
             /* Footer */
             .footer { font-size: 11px; }
         }
+        /* Desktop: hide scroll indicators */
+        .scroll-pills { display: none; }
     </style>
 </head>
 <body>
@@ -781,17 +821,80 @@
     <script>
         // Mobile: tap to toggle tooltips
         document.addEventListener('click', function(e) {
-            // Close all open tips first
             document.querySelectorAll('.has-tip.tip-active').forEach(function(el) {
                 if (!el.contains(e.target)) el.classList.remove('tip-active');
             });
-            // Toggle clicked tip
             var tip = e.target.closest('.has-tip');
             if (tip) {
                 e.preventDefault();
                 tip.classList.toggle('tip-active');
             }
         });
+
+        // Mobile: scroll snap + plan indicators
+        function initMobileScroll() {
+            if (window.innerWidth > 768) return;
+            var featCol = 110;
+            var planCol = (window.innerWidth - featCol - 16) / 2;
+
+            document.querySelectorAll('.table-scroll').forEach(function(scroller) {
+                var section = scroller.closest('.tab-content');
+                var isPerplexity = section && section.classList.contains('perplexity-section');
+                var planNames = [];
+                scroller.querySelectorAll('.plan-card h2').forEach(function(h) {
+                    planNames.push(h.textContent);
+                });
+                var colCount = planNames.length;
+
+                // Create indicator pills
+                var pills = document.createElement('div');
+                pills.className = 'scroll-pills';
+                planNames.forEach(function(name, i) {
+                    var pill = document.createElement('span');
+                    pill.className = 'scroll-pill' + (i < 2 ? ' visible' : '');
+                    pill.textContent = name;
+                    pill.setAttribute('data-index', i);
+                    pill.addEventListener('click', function() {
+                        var target = Math.max(0, i * planCol - planCol * 0); // scroll to show this col on left
+                        // If tapping a later column, scroll so it's the left of the 2 visible
+                        scroller.scrollTo({ left: i * planCol, behavior: 'smooth' });
+                    });
+                    pills.appendChild(pill);
+                });
+                scroller.parentNode.insertBefore(pills, scroller);
+
+                // Update pills on scroll
+                function updatePills() {
+                    var scrollLeft = scroller.scrollLeft;
+                    var firstVisible = Math.round(scrollLeft / planCol);
+                    pills.querySelectorAll('.scroll-pill').forEach(function(p, i) {
+                        if (i >= firstVisible && i < firstVisible + 2) {
+                            p.classList.add('visible');
+                        } else {
+                            p.classList.remove('visible');
+                        }
+                    });
+                }
+
+                // Scroll snap: debounce and snap to column boundary
+                var snapTimeout;
+                scroller.addEventListener('scroll', function() {
+                    updatePills();
+                    clearTimeout(snapTimeout);
+                    snapTimeout = setTimeout(function() {
+                        var pos = scroller.scrollLeft;
+                        var snapped = Math.round(pos / planCol) * planCol;
+                        // Clamp to max scroll
+                        var maxScroll = scroller.scrollWidth - scroller.clientWidth;
+                        snapped = Math.min(snapped, maxScroll);
+                        if (Math.abs(pos - snapped) > 2) {
+                            scroller.scrollTo({ left: snapped, behavior: 'smooth' });
+                        }
+                    }, 120);
+                });
+            });
+        }
+        initMobileScroll();
 
         function switchTab(tab) {
             // Hide all tab content
