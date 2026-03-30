@@ -262,8 +262,11 @@
             .plan-card .tag { font-size: 9px; padding: 1px 6px; }
 
             /* === Key fix: convert table to flex on mobile === */
-            /* This makes position:sticky work reliably on iOS Safari */
-            .compare-table { display: block; border: none; }
+            /* overflow:hidden on original table clips columns AND breaks sticky */
+            .compare-table {
+                display: block; border: none;
+                overflow: visible !important; border-radius: 0;
+            }
             .compare-table tbody { display: block; }
 
             /* Regular rows → flex */
