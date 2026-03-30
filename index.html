@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 订阅方案对比</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa; color: #1a1a2e; padding: 40px 20px;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        h1 { text-align: center; font-size: 28px; margin-bottom: 8px; }
+        .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 28px; }
+
+        /* ===== Floating Side Nav ===== */
+        .side-nav {
+            position: fixed; right: 24px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 8px; z-index: 100;
+        }
+        .side-nav-btn {
+            width: 56px; height: 56px; border-radius: 12px; border: 2px solid #e0e0e0;
+            background: #fff; color: #888; font-size: 10px; font-weight: 700;
+            cursor: pointer; transition: all 0.25s; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); line-height: 1.2; text-align: center;
+        }
+        .side-nav-btn:hover { transform: scale(1.08); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+        .side-nav-btn .nav-icon { font-size: 18px; }
+        .side-nav-btn.active-chatgpt { background: #10a37f; color: #fff; border-color: #10a37f; }
+        .side-nav-btn.active-gemini { background: #4285f4; color: #fff; border-color: #4285f4; }
+        .side-nav-btn.active-claude { background: #d97706; color: #fff; border-color: #d97706; }
+        .side-nav-btn.active-perplexity { background: #0d9488; color: #fff; border-color: #0d9488; }
+
+        /* Top tabs (kept for in-page, but secondary) */
+        .tabs { display: flex; justify-content: center; gap: 0; margin-bottom: 32px; }
+        .tab-btn {
+            padding: 12px 28px; font-size: 15px; font-weight: 600;
+            border: 2px solid #e0e0e0; background: #fff; color: #666;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .tab-btn:first-child { border-radius: 8px 0 0 8px; }
+        .tab-btn:last-child { border-radius: 0 8px 8px 0; }
+        .tab-btn:not(:first-child) { border-left: none; }
+        .tab-btn.active-chatgpt { background: #10a37f; color: #fff; border-color: #10a37f; }
+        .tab-btn.active-gemini { background: #4285f4; color: #fff; border-color: #4285f4; }
+        .tab-btn.active-claude { background: #d97706; color: #fff; border-color: #d97706; }
+        .tab-btn.active-perplexity { background: #0d9488; color: #fff; border-color: #0d9488; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ===== Legend ===== */
+        .legend {
+            display: flex; justify-content: center; flex-wrap: wrap;
+            gap: 20px; margin-bottom: 28px; font-size: 13px; color: #666;
+        }
+        .legend span { display: flex; align-items: center; gap: 6px; }
+
+        /* ===== Plan Header ===== */
+        .plan-header { display: grid; gap: 0; }
+        .plan-header-4 { grid-template-columns: 240px 1fr 1fr 1fr 1fr; }
+        .plan-header .corner { background: transparent; }
+        .plan-card {
+            text-align: center; padding: 20px 12px;
+            background: #fff; border: 1px solid #e0e0e0; border-bottom: none;
+        }
+        .plan-card:first-of-type { border-radius: 12px 0 0 0; }
+        .plan-card:last-of-type { border-radius: 0 12px 0 0; }
+        .plan-card h2 { font-size: 18px; margin-bottom: 4px; }
+        .plan-card .price { font-size: 13px; color: #888; margin-bottom: 6px; }
+        .plan-card .tag {
+            display: inline-block; font-size: 11px; padding: 2px 8px;
+            border-radius: 10px; background: #eee; color: #666;
+        }
+
+        /* Accent cards */
+        .plan-card.gpt-popular { background: #10a37f; color: #fff; border-color: #10a37f; }
+        .plan-card.gpt-popular .price { color: rgba(255,255,255,0.8); }
+        .plan-card.gpt-popular .tag { background: rgba(255,255,255,0.2); color: #fff; }
+        .plan-card.gpt-top { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+        .plan-card.gpt-top .price { color: rgba(255,255,255,0.7); }
+        .plan-card.gpt-top .tag { background: rgba(255,255,255,0.15); color: #fff; }
+        .plan-card.gem-popular { background: #4285f4; color: #fff; border-color: #4285f4; }
+        .plan-card.gem-popular .price { color: rgba(255,255,255,0.8); }
+        .plan-card.gem-popular .tag { background: rgba(255,255,255,0.2); color: #fff; }
+        .plan-card.gem-top { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+        .plan-card.gem-top .price { color: rgba(255,255,255,0.7); }
+        .plan-card.gem-top .tag { background: rgba(255,255,255,0.15); color: #fff; }
+        .plan-card.cla-popular { background: #d97706; color: #fff; border-color: #d97706; }
+        .plan-card.cla-popular .price { color: rgba(255,255,255,0.8); }
+        .plan-card.cla-popular .tag { background: rgba(255,255,255,0.2); color: #fff; }
+        .plan-card.cla-top { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+        .plan-card.cla-top .price { color: rgba(255,255,255,0.7); }
+        .plan-card.cla-top .tag { background: rgba(255,255,255,0.15); color: #fff; }
+        .plan-card.ppl-popular { background: #0d9488; color: #fff; border-color: #0d9488; }
+        .plan-card.ppl-popular .price { color: rgba(255,255,255,0.8); }
+        .plan-card.ppl-popular .tag { background: rgba(255,255,255,0.2); color: #fff; }
+        .plan-card.ppl-top { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+        .plan-card.ppl-top .price { color: rgba(255,255,255,0.7); }
+        .plan-card.ppl-top .tag { background: rgba(255,255,255,0.15); color: #fff; }
+
+        /* ===== Table ===== */
+        .compare-table {
+            width: 100%; border-collapse: collapse; background: #fff;
+            border: 1px solid #e0e0e0; border-radius: 0 0 12px 12px; overflow: hidden;
+        }
+        .compare-table th, .compare-table td {
+            padding: 11px 14px; text-align: center;
+            border-bottom: 1px solid #f0f0f0; font-size: 13px; vertical-align: middle;
+        }
+        .compare-table td:first-child { text-align: left; width: 240px; font-size: 13px; }
+
+        .chatgpt-section .category-row td { background: #f8f9fb; font-weight: 700; font-size: 12px; color: #10a37f; text-transform: uppercase; letter-spacing: 1px; padding: 13px 14px; border-bottom: 2px solid #e8e8e8; }
+        .gemini-section .category-row td { background: #f8f9fb; font-weight: 700; font-size: 12px; color: #4285f4; text-transform: uppercase; letter-spacing: 1px; padding: 13px 14px; border-bottom: 2px solid #e8e8e8; }
+        .claude-section .category-row td { background: #f8f9fb; font-weight: 700; font-size: 12px; color: #d97706; text-transform: uppercase; letter-spacing: 1px; padding: 13px 14px; border-bottom: 2px solid #e8e8e8; }
+        .perplexity-section .category-row td { background: #f8f9fb; font-weight: 700; font-size: 12px; color: #0d9488; text-transform: uppercase; letter-spacing: 1px; padding: 13px 14px; border-bottom: 2px solid #e8e8e8; }
+
+        .feature-name a { color: #1a1a2e; text-decoration: none; border-bottom: 1px dashed #ccc; transition: all 0.15s; }
+        .chatgpt-section .feature-name a:hover { color: #10a37f; border-bottom-color: #10a37f; }
+        .gemini-section .feature-name a:hover { color: #4285f4; border-bottom-color: #4285f4; }
+        .claude-section .feature-name a:hover { color: #d97706; border-bottom-color: #d97706; }
+        .perplexity-section .feature-name a:hover { color: #0d9488; border-bottom-color: #0d9488; }
+        .link-icon { font-size: 10px; color: #bbb; margin-left: 4px; }
+
+        .yes { color: #10a37f; font-weight: 600; }
+        .no { color: #d0d0d0; font-size: 16px; }
+        .limited { color: #e8930c; font-size: 12px; line-height: 1.4; }
+        .unlimited { color: #10a37f; font-weight: 600; font-size: 12px; }
+        .exclusive { color: #7c3aed; font-weight: 600; font-size: 12px; }
+        .info { color: #555; font-size: 12px; line-height: 1.4; }
+
+        .gemini-section .yes { color: #4285f4; }
+        .gemini-section .unlimited { color: #4285f4; }
+        .claude-section .yes { color: #d97706; }
+        .claude-section .unlimited { color: #d97706; }
+        .perplexity-section .yes { color: #0d9488; }
+        .perplexity-section .unlimited { color: #0d9488; }
+
+        .has-tip { position: relative; cursor: help; }
+        .has-tip .tip {
+            display: none; position: absolute; bottom: 130%; left: 50%;
+            transform: translateX(-50%); background: #333; color: #fff;
+            padding: 10px 16px; border-radius: 8px; font-size: 12px;
+            line-height: 1.6; z-index: 10; font-weight: 400;
+            min-width: 200px; max-width: 360px; width: max-content;
+            white-space: normal; text-align: left;
+        }
+        .has-tip:hover .tip { display: block; }
+        .has-tip.tip-active .tip { display: block; }
+        .compare-table tr:not(.category-row):hover { background: #f9fffe; }
+
+        .badge-discontinued { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; background: #fee2e2; color: #dc2626; margin-left: 6px; font-weight: 600; }
+        .badge-new { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; background: #dcfce7; color: #16a34a; margin-left: 6px; font-weight: 600; }
+        .badge-ad { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; background: #fef3c7; color: #d97706; margin-left: 6px; font-weight: 600; }
+
+        .footer { text-align: center; margin-top: 24px; font-size: 12px; color: #999; line-height: 1.8; }
+        .footer a { color: inherit; text-decoration: none; }
+        .chatgpt-section .footer a { color: #10a37f; }
+        .gemini-section .footer a { color: #4285f4; }
+        .claude-section .footer a { color: #d97706; }
+        .perplexity-section .footer a { color: #0d9488; }
+
+        /* ===== Guide Section ===== */
+        .guide-section {
+            margin-top: 48px; padding: 0 0 20px;
+        }
+        .guide-title {
+            text-align: center; font-size: 22px; font-weight: 700;
+            margin-bottom: 8px; color: #1a1a2e;
+        }
+        .guide-subtitle {
+            text-align: center; font-size: 13px; color: #888;
+            margin-bottom: 28px;
+        }
+        .guide-cards {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+            margin-bottom: 24px;
+        }
+        .guide-card {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 12px;
+            padding: 24px; transition: box-shadow 0.2s;
+        }
+        .guide-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+        .guide-card h3 {
+            font-size: 15px; margin-bottom: 6px; display: flex;
+            align-items: center; gap: 8px;
+        }
+        .guide-card .guide-price { font-size: 12px; color: #888; margin-bottom: 12px; }
+        .guide-card .guide-who {
+            font-size: 13px; color: #555; line-height: 1.7;
+        }
+        .guide-card .guide-who strong { color: #1a1a2e; }
+        .guide-card.highlight-green { border-color: #10a37f; border-width: 2px; }
+        .guide-card.highlight-blue { border-color: #4285f4; border-width: 2px; }
+        .guide-card.highlight-amber { border-color: #d97706; border-width: 2px; }
+        .guide-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .guide-dot.green { background: #10a37f; }
+        .guide-dot.blue { background: #4285f4; }
+        .guide-dot.amber { background: #d97706; }
+        .guide-dot.teal { background: #0d9488; }
+
+        .insight-box {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 12px;
+            padding: 24px; margin-top: 20px;
+        }
+        .insight-box h3 { font-size: 15px; margin-bottom: 12px; }
+        .insight-box p { font-size: 13px; color: #555; line-height: 1.8; margin-bottom: 8px; }
+        .insight-box .highlight { color: #d97706; font-weight: 600; }
+
+        @media (max-width: 768px) {
+            body { padding: 16px 8px 80px; }
+            h1 { font-size: 22px; }
+            .subtitle { font-size: 12px; margin-bottom: 16px; }
+
+            /* Top tabs: horizontal scroll */
+            .tabs {
+                justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch;
+                margin-bottom: 20px; gap: 0; padding: 0 4px;
+            }
+            .tab-btn { padding: 10px 16px; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
+
+            /* Side nav → bottom bar */
+            .side-nav {
+                position: fixed; right: auto; left: 0; top: auto; bottom: 0;
+                transform: none; flex-direction: row; width: 100%;
+                background: #fff; border-top: 1px solid #e0e0e0;
+                padding: 6px 8px; gap: 6px; justify-content: center;
+                box-shadow: 0 -2px 12px rgba(0,0,0,0.1);
+            }
+            .side-nav-btn {
+                width: auto; height: auto; flex: 1; max-width: 80px;
+                padding: 6px 4px; border-radius: 8px; font-size: 10px;
+            }
+            .side-nav-btn .nav-icon { font-size: 16px; }
+
+            /* Legend */
+            .legend { gap: 10px; font-size: 11px; margin-bottom: 16px; }
+
+            /* Table wrapper: horizontal scroll */
+            .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -8px; padding: 0 8px; }
+
+            /* Plan header */
+            .plan-header-4 { grid-template-columns: 110px repeat(4, 100px); min-width: 510px; }
+            .plan-header[style] { min-width: 410px !important; }
+            .plan-card { padding: 12px 6px; }
+            .plan-card h2 { font-size: 13px; margin-bottom: 2px; }
+            .plan-card .price { font-size: 11px; margin-bottom: 4px; }
+            .plan-card .tag { font-size: 9px; padding: 1px 6px; }
+
+            /* Table */
+            .compare-table { min-width: 510px; }
+            .perplexity-section .compare-table { min-width: 410px; }
+            .compare-table td:first-child { width: 110px; font-size: 11px; min-width: 110px; position: sticky; left: 0; background: #fff; z-index: 2; }
+            .compare-table td, .compare-table th { padding: 9px 6px; font-size: 11px; }
+            .category-row td { position: sticky; left: 0; z-index: 2; }
+
+            /* Tooltip: tap to show */
+            .has-tip .tip {
+                min-width: 160px; max-width: 260px; font-size: 11px;
+                padding: 8px 12px; left: auto; right: 0; transform: none;
+            }
+            /* Prevent tip from going off-screen left */
+            .compare-table td:first-child .has-tip .tip,
+            .compare-table td:nth-child(2) .has-tip .tip { left: 0; right: auto; }
+            /* Sticky column: category row background */
+            .category-row td:first-child { background: #f8f9fb !important; }
+            .compare-table tr:not(.category-row):hover td:first-child { background: #f9fffe; }
+            /* Perplexity 3-column layout on mobile */
+            .perplexity-section .plan-header[style] { grid-template-columns: 110px repeat(3, 100px) !important; min-width: 410px !important; }
+
+            /* Badges */
+            .badge-new, .badge-discontinued, .badge-ad { font-size: 9px; padding: 1px 4px; margin-left: 3px; }
+            .link-icon { display: none; }
+
+            /* Guide section */
+            .guide-section { margin-top: 32px; }
+            .guide-title { font-size: 18px; }
+            .guide-cards { grid-template-columns: 1fr; gap: 12px; }
+            .guide-card { padding: 16px; }
+            .guide-card h3 { font-size: 14px; }
+            .guide-card .guide-who { font-size: 12px; }
+            .insight-box { padding: 16px; }
+            .insight-box p { font-size: 12px; }
+
+            /* Footer */
+            .footer { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Floating Side Nav -->
+    <div class="side-nav">
+        <button class="side-nav-btn active-chatgpt" onclick="switchTab('chatgpt')" title="ChatGPT">
+            <span class="nav-icon">G</span><span>GPT</span>
+        </button>
+        <button class="side-nav-btn" onclick="switchTab('gemini')" title="Gemini">
+            <span class="nav-icon">G</span><span>Gemini</span>
+        </button>
+        <button class="side-nav-btn" onclick="switchTab('claude')" title="Claude">
+            <span class="nav-icon">C</span><span>Claude</span>
+        </button>
+        <button class="side-nav-btn" onclick="switchTab('perplexity')" title="Perplexity">
+            <span class="nav-icon">P</span><span>PPX</span>
+        </button>
+    </div>
+
+    <div class="container">
+        <h1>AI 订阅方案对比</h1>
+        <p class="subtitle">找到最适合你的 AI 工作助手方案 — 数据更新于 2026年3月</p>
+
+        <!-- Top Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active-chatgpt" onclick="switchTab('chatgpt')">ChatGPT</button>
+            <button class="tab-btn" onclick="switchTab('gemini')">Gemini</button>
+            <button class="tab-btn" onclick="switchTab('claude')">Claude</button>
+            <button class="tab-btn" onclick="switchTab('perplexity')">Perplexity</button>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- ChatGPT Tab -->
+        <!-- ============================================================ -->
+        <div id="tab-chatgpt" class="tab-content active chatgpt-section">
+            <div class="legend">
+                <span><span class="yes">&#10003;</span> 包含</span>
+                <span><span class="no">&#10005;</span> 不包含</span>
+                <span><span class="limited">橙色</span> 有使用限制</span>
+                <span><span class="unlimited">无限</span> 不限量</span>
+                <span><span class="exclusive">专属</span> 该方案独有</span>
+            </div>
+            <div class="table-scroll">
+            <div class="plan-header plan-header-4">
+                <div class="corner"></div>
+                <div class="plan-card"><h2>Free</h2><div class="price">免费</div><span class="tag">入门体验</span></div>
+                <div class="plan-card"><h2>Go</h2><div class="price">$8 / 月</div><span class="tag">轻度使用</span></div>
+                <div class="plan-card gpt-popular"><h2>Plus</h2><div class="price">$20 / 月</div><span class="tag">最受欢迎</span></div>
+                <div class="plan-card gpt-top"><h2>Pro</h2><div class="price">$200 / 月</div><span class="tag">专业级</span></div>
+            </div>
+            <table class="compare-table">
+                <tr class="category-row"><td colspan="5">可用模型</td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/11909943-gpt-53-and-gpt-54-in-chatgpt" target="_blank">GPT-5.3 Instant</a><span class="link-icon">&#8599;</span></td><td><span class="limited has-tip">10条/5小时<span class="tip">达到上限后降级为 GPT-5.4 mini</span></span></td><td><span class="limited has-tip">160条/3小时<span class="tip">达到上限后降级为 mini 版本</span></span></td><td><span class="limited has-tip">160条/3小时<span class="tip">达到上限后降级为 mini 版本</span></span></td><td><span class="unlimited">无限</span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/11909943-gpt-53-and-gpt-54-in-chatgpt" target="_blank">GPT-5.4 Thinking</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="limited has-tip">10条/5小时<span class="tip">通过工具菜单中的 Thinking 选项开启</span></span></td><td><span class="limited has-tip">3000条/周<span class="tip">可从模型选择器中选择</span></span></td><td><span class="unlimited">无限</span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/11909943-gpt-53-and-gpt-54-in-chatgpt" target="_blank">GPT-5.4 Pro</a><span class="link-icon">&#8599;</span><span class="badge-new">专属</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="exclusive">Pro 专属</span></td></tr>
+                <tr><td class="feature-name"><a href="https://openai.com/index/introducing-o3-and-o4-mini/" target="_blank">o3</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="exclusive">Pro 专属</span></td></tr>
+                <tr class="category-row"><td colspan="5">基础能力</td></tr>
+                <tr><td class="feature-name">对话 / 写作辅助</td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/9128153-chatgpt-search" target="_blank">联网搜索</a><span class="link-icon">&#8599;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/8555545-file-uploads-faq" target="_blank">文件上传 / 理解</a><span class="link-icon">&#8599;</span></td><td><span class="limited">基础</span></td><td><span class="limited has-tip">扩展额度<span class="tip">比 Free 有更多上传额度</span></span></td><td><span class="limited has-tip">80个/3小时<span class="tip">每个项目最多25个文件</span></span></td><td><span class="unlimited">无限</span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/8400551-gpt-4-vision" target="_blank">图片理解</a><span class="link-icon">&#8599;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name">广告</td><td><span class="badge-ad">有广告</span></td><td><span class="badge-ad">有广告</span></td><td><span class="info">无广告</span></td><td><span class="info">无广告</span></td></tr>
+                <tr class="category-row"><td colspan="5">创作工具</td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/9055440-using-dall-e-in-chatgpt" target="_blank">图片生成</a><span class="link-icon">&#8599;</span></td><td><span class="limited">有限额</span></td><td><span class="limited">扩展额度</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited">无限 · 更快</span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/9930437-canvas" target="_blank">Canvas（协作编辑）</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/8400625-voice-mode-faq" target="_blank">语音对话</a><span class="link-icon">&#8599;</span></td><td><span class="limited">基础语音</span></td><td><span class="info">高级语音</span></td><td><span class="info">高级语音</span></td><td><span class="info">高级语音</span></td></tr>
+                <tr><td class="feature-name">Sora（视频生成）<span class="badge-discontinued">已停服</span></td><td colspan="4" style="color: #999; font-size: 12px;">OpenAI 已于 2026年3月24日 停止 Sora 服务</td></tr>
+                <tr class="category-row"><td colspan="5">数据与分析</td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/8437071-data-analysis-with-chatgpt" target="_blank">代码解释器 / 数据分析</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="limited">扩展额度</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name">图表生成 / 可视化</td><td><span class="no">&#10005;</span></td><td><span class="limited">扩展额度</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr class="category-row"><td colspan="5">高级推理与研究</td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/9824965-using-reasoning-in-chatgpt" target="_blank">深度思考模式（Thinking）</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="limited">10条/5小时</span></td><td><span class="limited">3000条/周</span></td><td><span class="unlimited">无限</span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/10500283-deep-research-faq" target="_blank">深度研究（Deep Research）</a><span class="link-icon">&#8599;</span></td><td><span class="limited">5次/月</span></td><td><span class="no">&#10005;</span></td><td><span class="limited">25次/月</span></td><td><span class="limited">250次/月</span></td></tr>
+                <tr><td class="feature-name">上下文长度</td><td><span class="info">标准</span></td><td><span class="info">标准</span></td><td><span class="info">256K</span></td><td><span class="info has-tip">双倍上下文<span class="tip">相比 Plus 更大的上下文窗口</span></span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/8590148-memory-in-chatgpt" target="_blank">记忆功能</a><span class="link-icon">&#8599;</span></td><td><span class="limited">基础</span></td><td><span class="info">更长记忆</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited">最大记忆</span></td></tr>
+                <tr class="category-row"><td colspan="5">Agent 与自动化</td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/10612867-chatgpt-agent" target="_blank">Agent Mode（智能代理）</a><span class="link-icon">&#8599;</span><span class="badge-new">重要</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited">最大额度</span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan" target="_blank">Codex Agent（编程代理）</a><span class="link-icon">&#8599;</span><span class="badge-new">重要</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited has-tip">扩展版<span class="tip">无限使用，长运行上下文，可处理完整软件项目</span></span></td></tr>
+                <tr><td class="feature-name">Computer Use（电脑操控）<span class="badge-new">新</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/10191205-chatgpt-connectors" target="_blank">Tasks（定时任务）</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr class="category-row"><td colspan="5">扩展与定制</td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/8554397-gpts-faq" target="_blank">自定义 GPTs</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited">扩展版</span></td></tr>
+                <tr><td class="feature-name">Projects（项目管理）</td><td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited">扩展版</span></td></tr>
+                <tr><td class="feature-name"><a href="https://help.openai.com/en/articles/8096356-custom-instructions-for-chatgpt" target="_blank">自定义指令</a><span class="link-icon">&#8599;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name">新功能抢先体验</td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="exclusive">Pro 专属</span></td></tr>
+                <tr><td class="feature-name">额度用完后加购</td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="yes has-tip">&#10003;<span class="tip">Codex 等功能可额外购买使用额度</span></span></td><td><span class="info">一般不需要</span></td></tr>
+            </table>
+            </div>
+            <p class="footer">数据来源：<a href="https://openai.com/chatgpt/pricing/" target="_blank">OpenAI 官网</a> · <a href="https://help.openai.com/en/articles/11909943-gpt-53-and-gpt-54-in-chatgpt" target="_blank">模型文档</a> · <a href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes" target="_blank">更新日志</a><br>最后更新：2026年3月30日 · 具体功能和额度以 OpenAI 官网为准</p>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- Gemini Tab -->
+        <!-- ============================================================ -->
+        <div id="tab-gemini" class="tab-content gemini-section">
+            <div class="legend">
+                <span><span class="yes">&#10003;</span> 包含</span><span><span class="no">&#10005;</span> 不包含</span>
+                <span><span class="limited">橙色</span> 有使用限制</span><span><span class="unlimited">无限</span> 不限量</span>
+                <span><span class="exclusive">专属</span> 该方案独有</span>
+            </div>
+            <div class="table-scroll">
+            <div class="plan-header plan-header-4">
+                <div class="corner"></div>
+                <div class="plan-card"><h2>Free</h2><div class="price">免费</div><span class="tag">入门体验</span></div>
+                <div class="plan-card"><h2>AI Plus</h2><div class="price">$7.99 / 月</div><span class="tag">轻度使用</span></div>
+                <div class="plan-card gem-popular"><h2>AI Pro</h2><div class="price">$19.99 / 月</div><span class="tag">推荐方案</span></div>
+                <div class="plan-card gem-top"><h2>AI Ultra</h2><div class="price">$249.99 / 月</div><span class="tag">旗舰级</span></div>
+            </div>
+            <table class="compare-table">
+                <tr class="category-row"><td colspan="5">可用模型</td></tr>
+                <tr><td class="feature-name"><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank">Gemini Flash（快速模型）</a><span class="link-icon">&#8599;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name"><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank">Gemini 3 Pro</a><span class="link-icon">&#8599;</span></td><td><span class="limited has-tip">~5-10次/天<span class="tip">免费用户每天可使用约5-10次 Pro 模型</span></span></td><td><span class="limited">增强额度</span></td><td><span class="limited has-tip">100次/天<span class="tip">Thinking 和 Pro 模型合计每日100次</span></span></td><td><span class="unlimited">最高额度</span></td></tr>
+                <tr><td class="feature-name"><a href="https://ai.google.dev/gemini-api/docs/models" target="_blank">Gemini 3.1 Pro</a><span class="link-icon">&#8599;</span><span class="badge-new">最新</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited">最高额度</span></td></tr>
+                <tr><td class="feature-name"><a href="https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/" target="_blank">Thinking（推理模型）</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="limited">有限额</span></td><td><span class="limited has-tip">100次/天<span class="tip">与 Pro 模型合计</span></span></td><td><span class="unlimited">最高额度</span></td></tr>
+                <tr><td class="feature-name"><a href="https://blog.google/products-and-platforms/products/google-one/google-ai-ultra/" target="_blank">Deep Think（深度推理）</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="exclusive">Ultra 专属</span></td></tr>
+                <tr class="category-row"><td colspan="5">基础能力</td></tr>
+                <tr><td class="feature-name">对话 / 写作辅助</td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name">联网搜索</td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name">文件上传 / 理解</td><td><span class="limited">基础</span></td><td><span class="limited">扩展额度</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited">最高额度</span></td></tr>
+                <tr><td class="feature-name">图片 / 视频理解</td><td><span class="limited">基础</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name">上下文窗口</td><td><span class="info">32K tokens</span></td><td><span class="info">128K tokens</span></td><td><span class="info has-tip">1M tokens<span class="tip">相当于约1500页文本或30000行代码</span></span></td><td><span class="info has-tip">1M tokens<span class="tip">相当于约1500页文本或30000行代码</span></span></td></tr>
+                <tr class="category-row"><td colspan="5">创作工具</td></tr>
+                <tr><td class="feature-name">图片生成</td><td><span class="limited has-tip">100张/天<span class="tip">通过 Gemini App 生成</span></span></td><td><span class="limited">扩展额度</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited">最高额度</span></td></tr>
+                <tr><td class="feature-name"><a href="https://blog.google/products-and-platforms/products/google-one/google-ai-ultra/" target="_blank">Veo 视频生成</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="limited has-tip">Veo 3.1 Fast<span class="tip">200 AI积分/月，每个视频消耗约20积分</span></span></td><td><span class="limited has-tip">Veo 3.1 Fast 试用<span class="tip">有限试用额度</span></span></td><td><span class="unlimited has-tip">Veo 3 完整版<span class="tip">含音频生成，Flow 1080p 电影级工具</span></span></td></tr>
+                <tr><td class="feature-name"><a href="https://blog.google/products-and-platforms/products/google-one/google-ai-ultra/" target="_blank">Flow（AI 电影工具）</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="limited">有限额</span></td><td><span class="limited">有限额</span></td><td><span class="unlimited">最高额度</span></td></tr>
+                <tr><td class="feature-name">语音对话</td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr class="category-row"><td colspan="5">高级推理与研究</td></tr>
+                <tr><td class="feature-name"><a href="https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/" target="_blank">深度思考模式（Thinking）</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="limited">有限额</span></td><td><span class="limited">100次/天</span></td><td><span class="unlimited">最高额度</span></td></tr>
+                <tr><td class="feature-name"><a href="https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/" target="_blank">Deep Think（深度推理）</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="exclusive">Ultra 专属</span></td></tr>
+                <tr><td class="feature-name"><a href="https://support.google.com/gemini/answer/16275805" target="_blank">深度研究（Deep Research）</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="limited has-tip">20次/天<span class="tip">可分析数百个来源，生成综合研究报告</span></span></td><td><span class="unlimited">最高额度</span></td></tr>
+                <tr class="category-row"><td colspan="5">Agent 与自动化</td></tr>
+                <tr><td class="feature-name"><a href="https://deepmind.google/models/project-mariner/" target="_blank">Project Mariner（浏览器代理）</a><span class="link-icon">&#8599;</span><span class="badge-new">重要</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="exclusive has-tip">Ultra 专属<span class="tip">可同时执行10个浏览器任务：购物、订票、调研等</span></span></td></tr>
+                <tr><td class="feature-name"><a href="https://openai.com/index/introducing-codex/" target="_blank">Jules（编程代理）</a><span class="link-icon">&#8599;</span><span class="badge-new">重要</span></td><td><span class="limited">基础</span></td><td><span class="limited">增强额度</span></td><td><span class="limited has-tip">5x 额度<span class="tip">比免费用户高5倍的使用额度</span></span></td><td><span class="unlimited has-tip">20x 额度<span class="tip">最高并发数和任务限制，适合多代理工作流</span></span></td></tr>
+                <tr class="category-row"><td colspan="5">知识与笔记（NotebookLM）</td></tr>
+                <tr><td class="feature-name"><a href="https://notebooklm.google/plans" target="_blank">笔记本 / 来源数</a><span class="link-icon">&#8599;</span></td><td><span class="limited has-tip">基础<span class="tip">100个笔记本，50个来源/笔记本，50次对话/天</span></span></td><td><span class="limited">增强额度</span></td><td><span class="unlimited has-tip">Pro 版<span class="tip">500个笔记本，300个来源/笔记本</span></span></td><td><span class="unlimited has-tip">Ultra 版<span class="tip">500个笔记本，600个来源/笔记本，5000次对话/天</span></span></td></tr>
+                <tr><td class="feature-name"><a href="https://notebooklm.google/audio" target="_blank">Audio Overview（音频摘要）</a><span class="link-icon">&#8599;</span></td><td><span class="limited">基础额度</span></td><td><span class="limited">增强额度</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited has-tip">200次/天<span class="tip">支持80种语言，可与 AI 主持人实时互动提问</span></span></td></tr>
+                <tr><td class="feature-name">Video Overview（视频摘要）</td><td><span class="limited">基础额度</span></td><td><span class="limited">增强额度</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited">200次/天</span></td></tr>
+                <tr><td class="feature-name">报告 / 闪卡 / 测验生成</td><td><span class="limited">基础额度</span></td><td><span class="limited">增强额度</span></td><td><span class="yes">&#10003;</span></td><td><span class="unlimited">1000次/天</span></td></tr>
+                <tr><td class="feature-name">幻灯片 / 信息图去水印</td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="exclusive has-tip">Ultra 专属<span class="tip">可去除幻灯片和信息图上的水印，视频去水印即将支持</span></span></td></tr>
+                <tr class="category-row"><td colspan="5">扩展与定制</td></tr>
+                <tr><td class="feature-name"><a href="https://support.google.com/gemini/answer/16275805" target="_blank">Gems（自定义 AI 角色）</a><span class="link-icon">&#8599;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name">Canvas（协作编辑）</td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name"><a href="https://support.google.com/googleone/answer/14534406" target="_blank">Google Workspace AI</a><span class="link-icon">&#8599;</span><span class="badge-new">重要</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="yes has-tip">&#10003;<span class="tip">Gmail、Docs、Sheets、Slides 中使用 AI 功能</span></span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr><td class="feature-name">新功能抢先体验</td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="exclusive">Ultra 专属</span></td></tr>
+                <tr class="category-row"><td colspan="5">存储与附加权益</td></tr>
+                <tr><td class="feature-name">Google One 云存储</td><td><span class="info">15 GB</span></td><td><span class="info">200 GB</span></td><td><span class="info">2 TB</span></td><td><span class="info">30 TB</span></td></tr>
+                <tr><td class="feature-name">AI 积分（创作工具用）</td><td><span class="no">&#10005;</span></td><td><span class="limited">200 / 月</span></td><td><span class="limited">包含</span></td><td><span class="limited">25,000 / 月</span></td></tr>
+                <tr><td class="feature-name">家庭共享（最多5人）</td><td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td></tr>
+                <tr><td class="feature-name"><a href="https://one.google.com/about/google-ai-plans/" target="_blank">Google Home AI 功能</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="yes has-tip">&#10003;<span class="tip">AI 摄像头描述、通知、每日简报（含 Home Premium 高级版）</span></span></td></tr>
+                <tr><td class="feature-name"><a href="https://www.youtube.com/premium" target="_blank">YouTube Premium</a><span class="link-icon">&#8599;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="yes has-tip">&#10003;<span class="tip">YouTube 和 YouTube Music 无广告、离线播放、后台播放（部分地区可用）</span></span></td></tr>
+                <tr><td class="feature-name">Google Cloud 开发者积分</td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="info has-tip">$100/月<span class="tip">通过 Google Developer Program 获得每月100美元云积分</span></span></td></tr>
+                <tr><td class="feature-name">Whisk（图片转视频创作）</td><td><span class="no">&#10005;</span></td><td><span class="limited">有限额</span></td><td><span class="limited">有限额</span></td><td><span class="unlimited has-tip">最高额度<span class="tip">使用 Veo 3 的图片转视频创作工具</span></span></td></tr>
+                <tr><td class="feature-name">Project Genie2（交互世界生成）</td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td><td><span class="exclusive has-tip">Ultra 专属<span class="tip">实时创建和探索交互式世界（仅限美国）</span></span></td></tr>
+            </table>
+            </div>
+            <p class="footer">数据来源：<a href="https://gemini.google/subscriptions/" target="_blank">Google AI 订阅页</a> · <a href="https://support.google.com/gemini/answer/16275805" target="_blank">使用限制说明</a> · <a href="https://ai.google.dev/gemini-api/docs/models" target="_blank">模型文档</a><br>最后更新：2026年3月30日 · 具体功能和额度以 Google 官网为准</p>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- Claude Tab -->
+        <!-- ============================================================ -->
+        <div id="tab-claude" class="tab-content claude-section">
+            <div class="legend">
+                <span><span class="yes">&#10003;</span> 包含</span><span><span class="no">&#10005;</span> 不包含</span>
+                <span><span class="limited">橙色</span> 有使用限制</span><span><span class="unlimited">无限</span> 不限量</span>
+                <span><span class="exclusive">专属</span> 该方案独有</span>
+            </div>
+            <div class="table-scroll">
+            <div class="plan-header plan-header-4">
+                <div class="corner"></div>
+                <div class="plan-card"><h2>Free</h2><div class="price">免费</div><span class="tag">入门体验</span></div>
+                <div class="plan-card cla-popular"><h2>Pro</h2><div class="price">$20 / 月</div><span class="tag">推荐方案</span></div>
+                <div class="plan-card"><h2>Max 5x</h2><div class="price">$100 / 月</div><span class="tag">重度使用</span></div>
+                <div class="plan-card cla-top"><h2>Max 20x</h2><div class="price">$200 / 月</div><span class="tag">专业级</span></div>
+            </div>
+            <table class="compare-table">
+                <!-- 可用模型 -->
+                <tr class="category-row"><td colspan="5">可用模型</td></tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.anthropic.com/claude/haiku" target="_blank">Haiku 4.5</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.anthropic.com/claude/sonnet" target="_blank">Sonnet 4.6</a><span class="link-icon">&#8599;</span><span class="badge-new">最新</span></td>
+                    <td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.anthropic.com/claude/opus" target="_blank">Opus 4.6</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="no">&#10005;</span></td>
+                    <td><span class="limited has-tip">有限额<span class="tip">Pro 用户可使用 Opus，但有较严格的速率限制</span></span></td>
+                    <td><span class="limited has-tip">~225条/5小时<span class="tip">5倍于 Pro 的 Opus 使用额度</span></span></td>
+                    <td><span class="limited has-tip">~900条/5小时<span class="tip">20倍于 Pro 的 Opus 使用额度</span></span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">上下文窗口</td>
+                    <td><span class="info">200K tokens</span></td>
+                    <td><span class="info">200K tokens</span></td>
+                    <td><span class="info">200K tokens</span></td>
+                    <td><span class="info has-tip">200K / 1M<span class="tip">Opus 4.6 支持最大 1M token 上下文窗口</span></span></td>
+                </tr>
+
+                <!-- 基础能力 -->
+                <tr class="category-row"><td colspan="5">基础能力</td></tr>
+                <tr><td class="feature-name">对话 / 写作辅助</td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td></tr>
+                <tr>
+                    <td class="feature-name"><a href="https://support.claude.com/en/articles/9487310-what-are-artifacts-and-how-do-i-use-them" target="_blank">联网搜索 / Research</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="limited">基础</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">文件上传 / 理解</td>
+                    <td><span class="limited has-tip">有限额<span class="tip">支持 PDF、Word、TXT、CSV 等格式</span></span></td>
+                    <td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">图片理解</td>
+                    <td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">消息额度</td>
+                    <td><span class="limited has-tip">~30-100条/天<span class="tip">动态限制，取决于消息长度和复杂度，高峰时段会降低</span></span></td>
+                    <td><span class="limited has-tip">5x 额度<span class="tip">至少是免费版5倍的使用量</span></span></td>
+                    <td><span class="limited has-tip">5x Pro<span class="tip">约225条 Opus / 1125条 Sonnet 每5小时</span></span></td>
+                    <td><span class="limited has-tip">20x Pro<span class="tip">约900条 Opus / 4500条 Sonnet 每5小时</span></span></td>
+                </tr>
+
+                <!-- 创作与生产力 -->
+                <tr class="category-row"><td colspan="5">创作与生产力</td></tr>
+                <tr>
+                    <td class="feature-name"><a href="https://support.claude.com/en/articles/9487310-what-are-artifacts-and-how-do-i-use-them" target="_blank">Artifacts（内容生成）</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">语音对话</td>
+                    <td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">Cowork（协作模式）</td>
+                    <td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+
+                <!-- 高级推理 -->
+                <tr class="category-row"><td colspan="5">高级推理</td></tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.anthropic.com/news/claude-3-7-sonnet" target="_blank">Extended Thinking（扩展思考）</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="no">&#10005;</span></td>
+                    <td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">记忆功能</td>
+                    <td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+
+                <!-- Agent 与自动化 -->
+                <tr class="category-row"><td colspan="5">Agent 与自动化</td></tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.anthropic.com/claude-code" target="_blank">Claude Code（终端编程代理）</a><span class="link-icon">&#8599;</span><span class="badge-new">重要</span></td>
+                    <td><span class="no">&#10005;</span></td>
+                    <td><span class="yes has-tip">&#10003;<span class="tip">在终端中运行，可编辑文件、执行命令、完成多步编程任务</span></span></td>
+                    <td><span class="unlimited">5x 额度</span></td>
+                    <td><span class="unlimited">20x 额度</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">Computer Use（电脑操控）<span class="badge-new">重要</span></td>
+                    <td><span class="no">&#10005;</span></td>
+                    <td><span class="yes has-tip">&#10003;<span class="tip">Claude 可操控你的电脑：打开文件、点击、导航，无需配置</span></span></td>
+                    <td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name"><a href="https://modelcontextprotocol.io/" target="_blank">MCP（模型上下文协议）</a><span class="link-icon">&#8599;</span><span class="badge-new">重要</span></td>
+                    <td><span class="no">&#10005;</span></td>
+                    <td><span class="yes has-tip">&#10003;<span class="tip">连接 6000+ 应用：GitHub、Slack、Jira、Google Drive、Stripe、Figma 等</span></span></td>
+                    <td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+
+                <!-- 扩展与定制 -->
+                <tr class="category-row"><td colspan="5">扩展与定制</td></tr>
+                <tr>
+                    <td class="feature-name"><a href="https://support.claude.com/en/articles/9487310-what-are-artifacts-and-how-do-i-use-them" target="_blank">Projects（项目管理）</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="limited has-tip">基础<span class="tip">2026年2月扩展至免费用户，但额度有限</span></span></td>
+                    <td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">自定义指令（System Prompt）</td>
+                    <td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name"><a href="https://support.google.com/googleone/answer/14534406" target="_blank">Google Workspace 集成</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="no">&#10005;</span></td>
+                    <td><span class="yes has-tip">&#10003;<span class="tip">连接 Gmail、Google Drive 等</span></span></td>
+                    <td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">新功能优先体验</td>
+                    <td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td>
+                    <td><span class="exclusive">Max 专属</span></td><td><span class="exclusive">Max 专属</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">年付优惠</td>
+                    <td><span class="info">—</span></td>
+                    <td><span class="info has-tip">$17/月<span class="tip">年付 $204，折合每月 $17</span></span></td>
+                    <td><span class="info">仅月付</span></td><td><span class="info">仅月付</span></td>
+                </tr>
+            </table>
+            </div>
+            <p class="footer">数据来源：<a href="https://www.anthropic.com/pricing" target="_blank">Anthropic 官网</a> · <a href="https://platform.claude.com/docs/en/about-claude/models/overview" target="_blank">模型文档</a> · <a href="https://www.anthropic.com/max" target="_blank">Max 方案</a><br>最后更新：2026年3月30日 · 具体功能和额度以 Anthropic 官网为准</p>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- Perplexity Tab -->
+        <!-- ============================================================ -->
+        <div id="tab-perplexity" class="tab-content perplexity-section">
+            <div class="legend">
+                <span><span class="yes">&#10003;</span> 包含</span><span><span class="no">&#10005;</span> 不包含</span>
+                <span><span class="limited">橙色</span> 有使用限制</span><span><span class="unlimited">无限</span> 不限量</span>
+                <span><span class="exclusive">专属</span> 该方案独有</span>
+            </div>
+            <div class="table-scroll">
+            <div class="plan-header" style="grid-template-columns: 240px 1fr 1fr 1fr;">
+                <div class="corner"></div>
+                <div class="plan-card" style="border-radius: 12px 0 0 0;"><h2>Free</h2><div class="price">免费</div><span class="tag">入门体验</span></div>
+                <div class="plan-card ppl-popular"><h2>Pro</h2><div class="price">$20 / 月</div><span class="tag">推荐方案</span></div>
+                <div class="plan-card ppl-top" style="border-radius: 0 12px 0 0;"><h2>Max</h2><div class="price">$200 / 月</div><span class="tag">专业级</span></div>
+            </div>
+            <table class="compare-table">
+                <!-- 搜索模型 -->
+                <tr class="category-row"><td colspan="4">搜索与模型</td></tr>
+                <tr>
+                    <td class="feature-name">Quick Search（快速搜索）</td>
+                    <td><span class="unlimited">无限</span></td><td><span class="unlimited">无限</span></td><td><span class="unlimited">无限</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.perplexity.ai/help-center/en/articles/10352901-what-is-perplexity-pro" target="_blank">Pro Search（高级搜索）</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="limited">5次/天</span></td><td><span class="unlimited">无限</span></td><td><span class="unlimited">无限</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.perplexity.ai/help-center/en/articles/13641704-what-is-model-council" target="_blank">Model Council（多模型协作）</a><span class="link-icon">&#8599;</span><span class="badge-new">重要</span></td>
+                    <td><span class="no">&#10005;</span></td>
+                    <td><span class="no">&#10005;</span></td>
+                    <td><span class="exclusive has-tip">Max 专属<span class="tip">同时调用 Claude Opus 4.6、GPT-5.2、Gemini 3.0，综合对比后给出最佳答案，目前仅网页端</span></span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">自定义模型选择</td>
+                    <td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">高级模型（o3-pro / Opus 4）</td>
+                    <td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td>
+                    <td><span class="exclusive has-tip">Max 专属<span class="tip">包括 OpenAI o3-pro、Claude Opus 4 等前沿模型，持续更新</span></span></td>
+                </tr>
+
+                <!-- 研究能力 -->
+                <tr class="category-row"><td colspan="4">研究能力</td></tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.perplexity.ai/help-center/en/articles/13600190-what-s-new-in-advanced-deep-research" target="_blank">Deep Research（深度研究）</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="limited">3次/天</span></td>
+                    <td><span class="limited has-tip">20次/月<span class="tip">多步调研：自动分解问题、多轮搜索、评估来源质量、生成结构化报告</span></span></td>
+                    <td><span class="unlimited">更高额度</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">引用来源数量</td>
+                    <td><span class="limited">基础</span></td>
+                    <td><span class="unlimited has-tip">10x 引用<span class="tip">每个回答的引用源数量是免费版的10倍</span></span></td>
+                    <td><span class="unlimited">10x 引用</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">学术 / 通用来源筛选</td>
+                    <td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+
+                <!-- 创作工具 -->
+                <tr class="category-row"><td colspan="4">创作工具</td></tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.perplexity.ai/hub/blog/introducing-perplexity-max" target="_blank">Labs（报表/应用生成）</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="no">&#10005;</span></td>
+                    <td><span class="limited has-tip">有限额<span class="tip">可创建仪表盘、表格、演示文稿、小型应用等</span></span></td>
+                    <td><span class="unlimited">无限</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">图片生成</td>
+                    <td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">视频生成</td>
+                    <td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.perplexity.ai/help-center/en/articles/10352901-what-is-perplexity-pro" target="_blank">Create（文件/应用创作）</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="no">&#10005;</span></td><td><span class="yes">&#10003;</span></td><td><span class="yes">&#10003;</span></td>
+                </tr>
+
+                <!-- Agent 与自动化 -->
+                <tr class="category-row"><td colspan="4">Agent 与自动化</td></tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.perplexity.ai/help-center/en/articles/11680686-perplexity-max" target="_blank">Perplexity Computer</a><span class="link-icon">&#8599;</span><span class="badge-new">重要</span></td>
+                    <td><span class="no">&#10005;</span></td>
+                    <td><span class="limited has-tip">500积分/月<span class="tip">云端 AI Agent，协调19种模型完成复杂多步骤任务。按任务复杂度消耗积分（简单任务~30积分，复杂编程可达数千）</span></span></td>
+                    <td><span class="unlimited has-tip">15,000积分/月<span class="tip">与 Pro 相同的 Computer 功能，但积分额度为30倍。2026年2月25日上线</span></span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.perplexity.ai/hub/blog/introducing-perplexity-max" target="_blank">Comet 浏览器</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td>
+                    <td><span class="exclusive has-tip">Max 专属<span class="tip">Perplexity 自研 AI 浏览器，从零构建的智能思考伙伴</span></span></td>
+                </tr>
+
+                <!-- 协作与定制 -->
+                <tr class="category-row"><td colspan="4">协作与定制</td></tr>
+                <tr>
+                    <td class="feature-name"><a href="https://www.perplexity.ai/help-center/en/articles/11187416-which-perplexity-subscription-plan-is-right-for-you" target="_blank">Spaces（知识空间）</a><span class="link-icon">&#8599;</span></td>
+                    <td><span class="no">&#10005;</span></td>
+                    <td><span class="yes has-tip">&#10003;<span class="tip">团队协作、自定义知识库、内部文件搜索</span></span></td>
+                    <td><span class="yes">&#10003;</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">文件上传</td>
+                    <td><span class="limited has-tip">~3个/天<span class="tip">支持 PDF、DOCX、表格、纯文本</span></span></td>
+                    <td><span class="unlimited">增强额度</span></td>
+                    <td><span class="unlimited">增强额度</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">新功能抢先体验</td>
+                    <td><span class="no">&#10005;</span></td><td><span class="no">&#10005;</span></td>
+                    <td><span class="exclusive">Max 专属</span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">年付优惠</td>
+                    <td><span class="info">—</span></td>
+                    <td><span class="info has-tip">$200/年<span class="tip">年付相当于 $16.7/月，节省17%</span></span></td>
+                    <td><span class="info has-tip">$2000/年<span class="tip">年付相当于 $167/月，节省17%</span></span></td>
+                </tr>
+                <tr>
+                    <td class="feature-name">教育优惠</td>
+                    <td><span class="info">—</span></td>
+                    <td><span class="info has-tip">$10/月<span class="tip">通过 SheerID 学生认证后可享半价</span></span></td>
+                    <td><span class="info">—</span></td>
+                </tr>
+            </table>
+            </div>
+            <p class="footer">数据来源：<a href="https://www.perplexity.ai/help-center/en/articles/11187416-which-perplexity-subscription-plan-is-right-for-you" target="_blank">Perplexity 帮助中心</a> · <a href="https://www.perplexity.ai/hub/blog/introducing-perplexity-max" target="_blank">Max 方案介绍</a><br>最后更新：2026年3月30日 · 具体功能和额度以 Perplexity 官网为准</p>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 选购建议 -->
+        <!-- ============================================================ -->
+        <div class="guide-section">
+            <h2 class="guide-title">选购建议</h2>
+            <p class="guide-subtitle">根据你的使用场景，选择最合适的方案</p>
+
+            <div class="guide-cards">
+                <div class="guide-card highlight-green">
+                    <h3><span class="guide-dot green"></span> 大多数人的最佳起点</h3>
+                    <div class="guide-price">$20/月 档位</div>
+                    <div class="guide-who">
+                        <strong>ChatGPT Plus / Claude Pro / Gemini AI Pro</strong> 三者价格接近，都在 $20 左右。这个档位已经解锁了各平台几乎所有核心能力：高级模型、深度思考、Agent、编程代理、Computer Use 等。对大多数想用 AI 提升工作效率的人来说，这是性价比最高的选择。
+                    </div>
+                </div>
+                <div class="guide-card">
+                    <h3><span class="guide-dot amber"></span> $200/月 档位值得买吗？</h3>
+                    <div class="guide-price">ChatGPT Pro / Claude Max 20x / Gemini AI Ultra</div>
+                    <div class="guide-who">
+                        <strong>看你的准确度要求。</strong> 如果是浏览型的调研报告，跳着看、抓有用信息就够了，$20 档完全胜任。但如果你的报告需要<strong>每个段落都经得起审视、前后数据一致、逻辑连贯</strong>，$200 档的深度推理模型（如 GPT-5.4 Pro）会明显更好 — 它会花更长时间去求证验证，输出的准确度比 $20 档高一个档次。<br><br>
+                        <strong>适合谁：</strong>需要高质量严谨报告的研究者/分析师、每天高强度使用经常被限速打断的重度用户，或需要 Gemini Ultra 附加权益（YouTube Premium、30TB 存储）的用户。Claude Max 则更直接 — 与 Pro 模型完全一样，只是用量更大。
+                    </div>
+                </div>
+                <div class="guide-card">
+                    <h3><span class="guide-dot blue"></span> 免费版够用吗？</h3>
+                    <div class="guide-price">$0/月</div>
+                    <div class="guide-who">
+                        <strong>可以体验，但无法真正工作。</strong> 三个平台的免费版都有严格的消息限制、缺少 Agent/编程代理/Computer Use 等高级功能。如果只是偶尔问问问题，免费版够用；如果想把 AI 融入日常工作流，建议直接上 $20 档。
+                    </div>
+                </div>
+                <div class="guide-card">
+                    <h3>三个平台怎么选？</h3>
+                    <div class="guide-price">同一档位内的差异</div>
+                    <div class="guide-who">
+                        <strong>ChatGPT：</strong>生态最全面，图片生成、Canvas、语音对话体验最好，适合综合型需求。<br>
+                        <strong>Gemini：</strong>与 Google 生态深度绑定（Gmail、Docs、Drive、YouTube），NotebookLM 是独有优势，适合重度 Google 用户。<br>
+                        <strong>Claude：</strong>代码和长文本理解最强，Claude Code + MCP + Computer Use 组合在开发者和知识工作者中口碑最好。<br>
+                        <strong>Perplexity：</strong>搜索和研究能力最强，Deep Research 深度调研独具优势，适合重度信息检索和研究型工作者。Max 的 Model Council 可同时调用多个顶级模型取最佳结果。
+                    </div>
+                </div>
+            </div>
+
+            <div class="insight-box">
+                <h3>关于"专属模型"的真相</h3>
+                <p>三家的定价策略有本质区别：<strong>ChatGPT</strong> 和 <strong>Gemini</strong> 在 $200+ 档位提供专属模型（GPT-5.4 Pro、Deep Think），作为高价的卖点。而 <span class="highlight">Claude 的策略更坦诚 — Max 与 Pro 使用完全相同的模型，只是用量不同。</span></p>
+                <p>实际上，那些"专属模型"本质是用更多算力跑更久的推理过程，<strong>在极端复杂的数学和科学问题上确实更强</strong>，但对日常写作、总结、编程、数据分析等工作场景，与 $20 档的模型体感差异很小。</p>
+                <p><strong>结论：$20/月 是目前 AI 订阅的甜蜜点。</strong>先选一个平台用好 $20 档，比同时订多个免费版有效得多。</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mobile: tap to toggle tooltips
+        document.addEventListener('click', function(e) {
+            // Close all open tips first
+            document.querySelectorAll('.has-tip.tip-active').forEach(function(el) {
+                if (!el.contains(e.target)) el.classList.remove('tip-active');
+            });
+            // Toggle clicked tip
+            var tip = e.target.closest('.has-tip');
+            if (tip) {
+                e.preventDefault();
+                tip.classList.toggle('tip-active');
+            }
+        });
+
+        function switchTab(tab) {
+            // Hide all tab content
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Reset all top buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active-chatgpt', 'active-gemini', 'active-claude', 'active-perplexity');
+            });
+            // Reset all side nav buttons
+            document.querySelectorAll('.side-nav-btn').forEach(btn => {
+                btn.classList.remove('active-chatgpt', 'active-gemini', 'active-claude', 'active-perplexity');
+            });
+            // Show selected tab
+            document.getElementById('tab-' + tab).classList.add('active');
+            // Highlight buttons
+            const topBtns = document.querySelectorAll('.tab-btn');
+            const sideBtns = document.querySelectorAll('.side-nav-btn');
+            const classMap = { chatgpt: 0, gemini: 1, claude: 2, perplexity: 3 };
+            const activeClass = 'active-' + tab;
+            topBtns[classMap[tab]].classList.add(activeClass);
+            sideBtns[classMap[tab]].classList.add(activeClass);
+            // Scroll to top of content
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
